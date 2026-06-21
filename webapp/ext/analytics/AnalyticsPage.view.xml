@@ -1,0 +1,64 @@
+<mvc:View xmlns:mvc="sap.ui.core.mvc"
+            xmlns:macros="sap.fe.macros"
+            xmlns="sap.m"
+            controllerName="maintnoti.maint.ext.analytics.AnalyticsPage">
+
+      <Page showHeader="false">
+          <content>
+              <VBox>
+                  <HBox class="sapUiMediumMarginTop sapUiMediumMarginBegin sapUiSmallMarginBottom" wrap="Wrap">
+                      <GenericTile class="sapUiTinyMarginEnd sapUiTinyMarginBottom"
+                                   header="Total Notifications" subheader="All records" frameType="OneByOne">
+                          <tileContent>
+                              <TileContent>
+                                  <content>
+                                      <NumericContent value="{kpi>/count}" valueColor="Neutral" indicator="None" />
+                                  </content>
+                              </TileContent>
+                          </tileContent>
+                      </GenericTile>
+                      <GenericTile class="sapUiTinyMarginEnd sapUiTinyMarginBottom"
+                                   header="Total SLA Hours" subheader="Sum all notifications" frameType="OneByOne">
+                          <tileContent>
+                              <TileContent unit="hrs">
+                                  <content>
+                                      <NumericContent value="{kpi>/totalHours}" valueColor="Critical" indicator="Up" />
+                                  </content>
+                              </TileContent>
+                          </tileContent>
+                      </GenericTile>
+                      <GenericTile class="sapUiTinyMarginEnd sapUiTinyMarginBottom"
+                                   header="Open Notifications" subheader="Status: Open" frameType="OneByOne">
+                          <tileContent>
+                              <TileContent>
+                                  <content>
+                                      <NumericContent value="{kpi>/openCount}" valueColor="Error" indicator="None" />
+                                  </content>
+                              </TileContent>
+                          </tileContent>
+                      </GenericTile>
+                  </HBox>
+
+                  <macros:FilterBar id="analyticsFilterBar"
+                                    metaPath="@com.sap.vocabularies.UI.v1.SelectionFields"
+                                    variantManagement="None"
+                                    class="sapUiSmallMarginBegin sapUiSmallMarginEnd sapUiSmallMarginBottom" />
+
+                  <Title text="SLA Hours by Status" class="sapUiSmallMarginBegin sapUiSmallMarginBottom" />
+                  <macros:Chart id="chartByStatus"
+                                metaPath="@com.sap.vocabularies.UI.v1.Chart#NotifByStatus"
+                                filterBar="analyticsFilterBar"
+                                personalization="Sort,Type,Item"
+                                variantManagement="None" />
+
+                  <Title text="SLA Hours by Priority" class="sapUiMediumMarginTop sapUiSmallMarginBegin sapUiSmallMarginBottom" />
+                  <macros:Chart id="chartByPriority"
+                                metaPath="@com.sap.vocabularies.UI.v1.Chart#NotifByPriority"
+                                filterBar="analyticsFilterBar"
+                                personalization="Sort,Type,Item"
+                                variantManagement="None" />
+              </VBox>
+          </content>
+      </Page>
+
+  </mvc:View>
