@@ -1,5 +1,6 @@
 <mvc:View xmlns:mvc="sap.ui.core.mvc"
     xmlns="sap.m"
+    xmlns:core="sap.ui.core"
     xmlns:viz="sap.viz.ui5.controls"
     xmlns:vizData="sap.viz.ui5.data"
     xmlns:vizFeeds="sap.viz.ui5.controls.common.feeds"
@@ -10,6 +11,7 @@
             <ScrollContainer height="100%" vertical="true" horizontal="false">
                 <VBox>
 
+                    <!-- KPI Tiles -->
                     <HBox class="sapUiMediumMarginTop sapUiMediumMarginBegin sapUiSmallMarginBottom" wrap="Wrap">
                         <GenericTile class="sapUiTinyMarginEnd sapUiTinyMarginBottom"
                                      header="Total Notifications" subheader="All records" frameType="OneByOne">
@@ -43,6 +45,24 @@
                         </GenericTile>
                     </HBox>
 
+                    <!-- Filters -->
+                    <HBox class="sapUiSmallMarginBegin sapUiSmallMarginEnd sapUiSmallMarginBottom" alignItems="Center" wrap="Wrap">
+                        <Label text="Status" class="sapUiSmallMarginEnd" />
+                        <Select id="filterStatus" change=".onFilterChange" class="sapUiSmallMarginEnd" width="12rem">
+                            <items>
+                                <core:Item key="" text="All Statuses" />
+                            </items>
+                        </Select>
+                        <Label text="Priority" class="sapUiSmallMarginEnd" />
+                        <Select id="filterPriority" change=".onFilterChange" class="sapUiSmallMarginEnd" width="12rem">
+                            <items>
+                                <core:Item key="" text="All Priorities" />
+                            </items>
+                        </Select>
+                        <Button text="Reset" icon="sap-icon://clear-filter" type="Transparent" press=".onResetFilters" />
+                    </HBox>
+
+                    <!-- Chart 1: SLA Hours by Status -->
                     <VBox class="sapUiSmallMarginBegin sapUiSmallMarginEnd sapUiSmallMarginBottom">
                         <HBox alignItems="Center" justifyContent="SpaceBetween" class="sapUiSmallMarginBottom">
                             <Title text="SLA Hours by Status" />
@@ -75,6 +95,7 @@
                         </viz:VizFrame>
                     </VBox>
 
+                    <!-- Chart 2: SLA Hours by Priority -->
                     <VBox class="sapUiSmallMarginBegin sapUiSmallMarginEnd sapUiMediumMarginTop sapUiSmallMarginBottom">
                         <HBox alignItems="Center" justifyContent="SpaceBetween" class="sapUiSmallMarginBottom">
                             <Title text="SLA Hours by Priority" />
