@@ -9,16 +9,22 @@ sap.ui.define([
 
         onInit: function () {
             PageController.prototype.onInit.apply(this, arguments);
+            this._dataLoaded = false;
             var oView = this.getView();
             oView.setModel(new JSONModel({ count: 0, totalHours: 0, openCount: 0 }), "kpi");
             oView.setModel(new JSONModel({ data: [] }), "chartStatus");
             oView.setModel(new JSONModel({ data: [] }), "chartPriority");
+        },
 
+        onAfterRendering: function () {
+            if (PageController.prototype.onAfterRendering) {
+                PageController.prototype.onAfterRendering.apply(this, arguments);
+            }
+            if (this._dataLoaded) { return; }
             var oModel = this.getOwnerComponent().getModel();
             if (oModel) {
-                oModel.getMetaModel().requestObject("/MaintNotificationAnal/").then(function () {
-                    this._loadAllData(oModel);
-                }.bind(this)).catch(function () {});
+                this._dataLoaded = true;
+                this._loadAllData(oModel);
             }
         },
 
@@ -42,13 +48,17 @@ sap.ui.define([
                     total += hours;
                     if (status === "101") { openCount++; }
 
-                    if (!statusMap[status])   { statusMap[status]   = { StatusText:   stText, SlaHours: 0 }; }
-                    if (!priorityMap[priority]){ priorityMap[priority]= { PriorityText: prText, SlaHours: 0 }; }
-                    statusMap[status].SlaHours   += hours;
+                    if (!statusMap[status])     { statusMap[status]     = { StatusText:   stText, SlaHours: 0 }; }
+                    if (!priorityMap[priority]) { priorityMap[priority] = { PriorityText: prText, SlaHours: 0 }; }
+                    statusMap[status].SlaHours     += hours;
                     priorityMap[priority].SlaHours += hours;
                 });
 
-                oView.getModel("kpi").setData({ count: aCtx.length, totalHours: total, openCount: openCount });
+                oView.getModel("kpi").setData({
+                    count: aCtx.length,
+                    totalHours: total,
+                    openCount: openCount
+                });
                 oView.getModel("chartStatus").setProperty("/data",   Object.values(statusMap));
                 oView.getModel("chartPriority").setProperty("/data", Object.values(priorityMap));
 
