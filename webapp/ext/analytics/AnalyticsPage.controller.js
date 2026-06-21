@@ -10,8 +10,9 @@ sap.ui.define([
 
         onInit: function () {
             PageController.prototype.onInit.apply(this, arguments);
-            this._dataLoaded = false;
-            this._rawData    = [];
+            this._dataLoaded  = false;
+            this._feedsReady  = false;
+            this._rawData     = [];
             var oView = this.getView();
             oView.setModel(new JSONModel({ count: 0, totalHours: 0, openCount: 0 }), "kpi");
             oView.setModel(new JSONModel({ data: [] }), "chartStatus");
@@ -39,11 +40,19 @@ sap.ui.define([
                 if (oView.bIsDestroyed) { return; }
 
                 that._rawData = aCtx.map(function (ctx) {
+                    var techFirst = ctx.getProperty("TechFirstName") || "";
+                    var techLast  = ctx.getProperty("TechLastName")  || "";
+                    var techID    = ctx.getProperty("TechnicianID")  || "?";
+                    var techName  = (techFirst + " " + techLast).trim() || techID;
                     return {
-                        status:       ctx.getProperty("Status")       || "?",
-                        statusText:   ctx.getProperty("StatusText")   || ctx.getProperty("Status") || "?",
-                        priority:     ctx.getProperty("Priority")     || "?",
+                        status:       ctx.getProperty("Status")    || "?",
+                        statusText:   ctx.getProperty("StatusText") || ctx.getProperty("Status") || "?",
+                        priority:     ctx.getProperty("Priority")   || "?",
                         priorityText: ctx.getProperty("PriorityText") || ctx.getProperty("Priority") || "?",
+                        plant:        ctx.getProperty("PlantID")    || "?",
+                        plantText:    ctx.getProperty("PlantName")  || ctx.getProperty("PlantID") || "?",
+                        technician:   techID,
+                        techName:     techName,
                         slaHours:     parseFloat(ctx.getProperty("SlaHours") || 0)
                     };
                 });
@@ -55,35 +64,51 @@ sap.ui.define([
         },
 
         _populateFilters: function () {
-            var oView       = this.getView();
-            var oStatusSel  = oView.byId("filterStatus");
-            var oPrioritySel= oView.byId("filterPriority");
+            var oView     = this.getView();
+            var oSelects  = {
+                status:     oView.byId("filterStatus"),
+                priority:   oView.byId("filterPriority"),
+                plant:      oView.byId("filterPlant"),
+                technician: oView.byId("filterTechnician")
+            };
 
-            // Keep first "All" item, remove the rest
-            while (oStatusSel.getItems().length > 1)   { oStatusSel.removeItem(1); }
-            while (oPrioritySel.getItems().length > 1)  { oPrioritySel.removeItem(1); }
+            Object.values(oSelects).forEach(function (oSel) {
+                while (oSel.getItems().length > 1) { oSel.removeItem(1); }
+            });
 
-            var statusSeen = {}, prioritySeen = {};
+            var seen = { status: {}, priority: {}, plant: {}, technician: {} };
             this._rawData.forEach(function (row) {
-                if (!statusSeen[row.status]) {
-                    statusSeen[row.status] = true;
-                    oStatusSel.addItem(new Item({ key: row.status, text: row.statusText }));
+                if (!seen.status[row.status]) {
+                    seen.status[row.status] = true;
+                    oSelects.status.addItem(new Item({ key: row.status, text: row.statusText }));
                 }
-                if (!prioritySeen[row.priority]) {
-                    prioritySeen[row.priority] = true;
-                    oPrioritySel.addItem(new Item({ key: row.priority, text: row.priorityText }));
+                if (!seen.priority[row.priority]) {
+                    seen.priority[row.priority] = true;
+                    oSelects.priority.addItem(new Item({ key: row.priority, text: row.priorityText }));
+                }
+                if (!seen.plant[row.plant]) {
+                    seen.plant[row.plant] = true;
+                    oSelects.plant.addItem(new Item({ key: row.plant, text: row.plantText }));
+                }
+                if (!seen.technician[row.technician]) {
+                    seen.technician[row.technician] = true;
+                    oSelects.technician.addItem(new Item({ key: row.technician, text: row.techName }));
                 }
             });
         },
 
         _applyFilters: function () {
-            var oView      = this.getView();
-            var sStatus    = oView.byId("filterStatus").getSelectedKey();
-            var sPriority  = oView.byId("filterPriority").getSelectedKey();
+            var oView     = this.getView();
+            var sStatus   = oView.byId("filterStatus").getSelectedKey();
+            var sPriority = oView.byId("filterPriority").getSelectedKey();
+            var sPlant    = oView.byId("filterPlant").getSelectedKey();
+            var sTech     = oView.byId("filterTechnician").getSelectedKey();
 
             var aFiltered = this._rawData.filter(function (row) {
-                return (!sStatus   || row.status   === sStatus) &&
-                       (!sPriority || row.priority === sPriority);
+                return (!sStatus   || row.status     === sStatus)   &&
+                       (!sPriority || row.priority   === sPriority) &&
+                       (!sPlant    || row.plant       === sPlant)    &&
+                       (!sTech     || row.technician  === sTech);
             });
 
             var total = 0, openCount = 0;
@@ -92,13 +117,8 @@ sap.ui.define([
             aFiltered.forEach(function (row) {
                 total += row.slaHours;
                 if (row.status === "101") { openCount++; }
-
-                if (!statusMap[row.status]) {
-                    statusMap[row.status] = { StatusText: row.statusText, SlaHours: 0 };
-                }
-                if (!priorityMap[row.priority]) {
-                    priorityMap[row.priority] = { PriorityText: row.priorityText, SlaHours: 0 };
-                }
+                if (!statusMap[row.status])     { statusMap[row.status]     = { StatusText: row.statusText, SlaHours: 0 }; }
+                if (!priorityMap[row.priority]) { priorityMap[row.priority] = { PriorityText: row.priorityText, SlaHours: 0 }; }
                 statusMap[row.status].SlaHours    += row.slaHours;
                 priorityMap[row.priority].SlaHours += row.slaHours;
             });
@@ -106,6 +126,25 @@ sap.ui.define([
             oView.getModel("kpi").setData({ count: aFiltered.length, totalHours: total, openCount: openCount });
             oView.getModel("chartStatus").setProperty("/data",   Object.values(statusMap));
             oView.getModel("chartPriority").setProperty("/data", Object.values(priorityMap));
+
+            // Add feeds once after first real data arrives — prevents [50053] on empty initial state
+            if (!this._feedsReady && aFiltered.length > 0) {
+                this._feedsReady = true;
+                this._initFeeds();
+            }
+        },
+
+        _initFeeds: function () {
+            var oVizStatus   = this.byId("vizStatus");
+            var oVizPriority = this.byId("vizPriority");
+
+            oVizStatus.removeAllFeeds();
+            oVizStatus.addFeed(new FeedItem({ uid: "valueAxis",    type: "Measure",   values: ["SLA Hours"] }));
+            oVizStatus.addFeed(new FeedItem({ uid: "categoryAxis", type: "Dimension", values: ["Status"] }));
+
+            oVizPriority.removeAllFeeds();
+            oVizPriority.addFeed(new FeedItem({ uid: "valueAxis",    type: "Measure",   values: ["SLA Hours"] }));
+            oVizPriority.addFeed(new FeedItem({ uid: "categoryAxis", type: "Dimension", values: ["Priority"] }));
         },
 
         onFilterChange: function () {
@@ -116,6 +155,8 @@ sap.ui.define([
             var oView = this.getView();
             oView.byId("filterStatus").setSelectedKey("");
             oView.byId("filterPriority").setSelectedKey("");
+            oView.byId("filterPlant").setSelectedKey("");
+            oView.byId("filterTechnician").setSelectedKey("");
             this._applyFilters();
         },
 
