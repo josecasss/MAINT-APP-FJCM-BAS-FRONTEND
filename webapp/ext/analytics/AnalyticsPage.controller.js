@@ -7,6 +7,7 @@ sap.ui.define([
     return PageController.extend("maintnoti.maint.ext.analytics.AnalyticsPage", {
         onInit: function () {
             PageController.prototype.onInit.apply(this, arguments);
+            this._kpiLoaded = false;
             this.getView().setModel(new JSONModel({ count: "...", totalHours: "...", openCount: "..." }), "kpi");
         },
 
@@ -14,6 +15,7 @@ sap.ui.define([
             if (PageController.prototype.onAfterRendering) {
                 PageController.prototype.onAfterRendering.apply(this, arguments);
             }
+            if (this._kpiLoaded) { return; }
             var oModel = this.getOwnerComponent().getModel();
             if (oModel) {
                 this._loadKpis(oModel);
@@ -21,12 +23,15 @@ sap.ui.define([
         },
 
         _loadKpis: function (oModel) {
+            this._kpiLoaded = true;
             var oView = this.getView();
-            oModel.bindList("/MaintNotificationAnal").requestContexts(0, 500).then(function (aCtx) {
+            var oListBinding = oModel.bindList("/MaintNotificationAnal");
+            oListBinding.requestContexts(0, 500).then(function (aCtx) {
+                if (oView.bIsDestroyed) { return; }
                 var total = 0;
                 var openCount = 0;
                 aCtx.forEach(function (ctx) {
-                    total += (ctx.getProperty("SlaHours") || 0);
+                    total += parseFloat(ctx.getProperty("SlaHours") || 0);
                     if (ctx.getProperty("Status") === "101") {
                         openCount++;
                     }
@@ -36,6 +41,10 @@ sap.ui.define([
                     totalHours: total,
                     openCount: openCount
                 });
+            }).catch(function () {
+                // KPIs remain at default "..."
+            }).finally(function () {
+                oListBinding.destroy();
             });
         }
     });
