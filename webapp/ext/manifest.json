@@ -210,11 +210,6 @@
                     "key": "tab_low",
                     "annotationPath": "com.sap.vocabularies.UI.v1.SelectionPresentationVariant#SPV_Low",
                     "label": "Low"
-                  },
-                  {
-                    "key": "tab_chart",
-                    "annotationPath": "com.sap.vocabularies.UI.v1.SelectionPresentationVariant#SPV_Chart",
-                    "label": "Chart"
                   }
                 ]
               },
@@ -281,8 +276,7 @@
           "contextPattern": "",
           "options": {
             "settings": {
-              "viewName": "maintnoti.maint.ext.analytics.AnalyticsPage",
-              "contextPath": "/MaintNotificationAnal"
+              "viewName": "maintnoti.maint.ext.analytics.AnalyticsPage"
             }
           }
         }
